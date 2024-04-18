@@ -122,6 +122,7 @@ export class AppService {
     } catch (e) {
       this.client.query('ROLLBACK');
       await this.disconnect();
+      console.log(e);
       throw new BadRequestException();
     }
   }
