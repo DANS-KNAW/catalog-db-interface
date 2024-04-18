@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool, PoolClient } from 'pg';
 import { Annotation, Resource } from './entities';
@@ -52,7 +47,6 @@ export class AppService {
           'ALTER TABLE resource ADD COLUMN fragment TEXT',
         );
       }
-
 
       const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXZ');
 

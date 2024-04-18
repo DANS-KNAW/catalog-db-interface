@@ -13,7 +13,7 @@ export class Annotation {
       value: string;
     };
     created_at: string;
-    resource? : string;
+    resource?: string;
   };
   vocabularies: {
     pathways: [];
