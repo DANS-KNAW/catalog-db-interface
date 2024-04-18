@@ -1,3 +1,4 @@
+import { Annotation } from './annotation';
 import { GroupResource } from './group_resource';
 import { Individual } from './individual';
 import { IndividualGroup } from './individual_group';
@@ -24,6 +25,34 @@ import { SubjectResource } from './subject_resource';
 import { UriType } from './uri_type';
 import { Workflow } from './workflow';
 import { Workinggroup } from './workinggroup';
+
+export { GroupResource };
+export { IndividualGroup };
+export { IndividualGroupall };
+export { IndividualInstitution };
+export { IndividualMember };
+export { IndividualResource };
+export { Individual };
+export { InstitutionCountry };
+export { InstitutionInstitutionrole };
+export { InstitutionOrganisationtype };
+export { InstitutionRoles };
+export { Institutions };
+export { Interestgroup };
+export { Orgtype };
+export { Pathway };
+export { Relation };
+export { Resource };
+export { ResourcePathway };
+export { ResourceRelation };
+export { ResourceRights };
+export { ResourceWorkflow };
+export { Rights };
+export { SubjectResource };
+export { UriType };
+export { Workflow };
+export { Workinggroup };
+export { Annotation };
 
 export default [
   GroupResource,
@@ -52,4 +81,5 @@ export default [
   UriType,
   Workflow,
   Workinggroup,
+  Annotation,
 ];
