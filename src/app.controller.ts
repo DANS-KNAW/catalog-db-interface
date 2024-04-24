@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Annotation } from './entities';
 import { ApiKeyGuard } from './auth/apikey.guard';

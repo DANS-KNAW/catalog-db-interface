@@ -1,10 +1,11 @@
 import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool, PoolClient } from 'pg';
-import { Annotation, Resource } from './entities';
+import { Annotation, GroupResource, Interestgroup, Resource } from './entities';
 import { customAlphabet } from 'nanoid';
 import { formatISO } from 'date-fns';
 import * as es7 from 'es7';
+import { InterestGroupDto } from './dto/InterestGroupsDto';
 
 @Injectable()
 export class AppService {
@@ -67,6 +68,46 @@ export class AppService {
       resource.fragment = annotation.annotation;
       resource.uuid_uritype = annotation.uritype;
 
+      const interestGroups = await Promise.all(
+        annotation.vocabularies.interest_groups.map(
+          async (interestGroupAnnotaton): Promise<InterestGroupDto> => {
+            const groupResource = new GroupResource();
+            groupResource.uuid_group = interestGroupAnnotaton.id;
+            groupResource.title_group = interestGroupAnnotaton.label;
+            groupResource.relation_uuid = 'rda_graph:17BF5718';
+            groupResource.relation = 'isRelated';
+            groupResource.uuid_resource = resource.uuid_rda;
+            groupResource.title_resource = resource.title;
+
+            await this.client.query(
+              'INSERT INTO group_resource (uuid_group, title_group, relation_uuid, relation, uuid_resource, title_resource) VALUES ($1, $2, $3, $4, $5, $6)',
+              [
+                groupResource.uuid_group,
+                groupResource.title_group,
+                groupResource.relation_uuid,
+                groupResource.relation,
+                groupResource.uuid_resource,
+                groupResource.title_resource,
+              ],
+            );
+
+            const interestGroupRow = await this.client.query(
+              'SELECT * FROM interestgroup WHERE uuid_interestgroup = $1 LIMIT 1',
+              [interestGroupAnnotaton.id],
+            );
+
+            const interestGroup = new Interestgroup();
+            Object.assign(interestGroup, interestGroupRow.rows[0]);
+
+            const interestGroupDto = new InterestGroupDto();
+            Object.assign(interestGroupDto, interestGroup);
+            interestGroupDto.relation = 'isRelated';
+
+            return interestGroupDto;
+          },
+        ),
+      );
+
       this.client.query(
         'INSERT INTO resource (uuid, uuid_rda, uuid_uritype, title, notes, uri, dc_date, dc_description, dc_language, type, dc_type, fragment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
         [
@@ -112,6 +153,7 @@ export class AppService {
           type: resource.type,
           dc_type: resource.dc_type,
           fragment: resource.fragment,
+          interest_groups: interestGroups,
         },
       });
 

@@ -1,3 +1,11 @@
+type vocab = {
+  id: string;
+  label: string;
+  value: string;
+  description?: string;
+  url?: string;
+};
+
 export class Annotation {
   page_url: string;
   annotation: string;
@@ -16,10 +24,11 @@ export class Annotation {
     resource?: string;
   };
   vocabularies: {
-    pathways: [];
-    gorc_attributes: [];
-    gorc_elements: [];
-    working_groups: [];
-    domains: [];
+    pathways: vocab[];
+    gorc_attributes: vocab[];
+    gorc_elements: vocab[];
+    working_groups: vocab[];
+    interest_groups: vocab[];
+    domains: vocab[];
   };
 }
