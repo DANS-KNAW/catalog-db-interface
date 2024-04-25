@@ -12,6 +12,7 @@ import {
   ResourceGorcAttribute,
   ResourceGorcElement,
   ResourcePathway,
+  UriType,
   Workinggroup,
 } from './entities';
 import { customAlphabet } from 'nanoid';
@@ -296,6 +297,22 @@ export class AppService {
         ),
       );
 
+      const uriTypeRow = await this.client.query(
+        'SELECT * FROM uri_type WHERE uuid_uritype = $1 LIMIT 1',
+        [annotation.uritype],
+      );
+
+      if (uriTypeRow.rowCount === 0) {
+        throw new BadRequestException();
+      }
+
+      this.nullRemover(uriTypeRow.rows[0]);
+
+      const uriType = {
+        uritype: uriTypeRow.rows[0].uritype,
+        description: uriTypeRow.rows[0].description,
+      };
+
       this.client.query(
         'INSERT INTO resource (uuid, uuid_rda, uuid_uritype, title, notes, uri, dc_date, dc_description, dc_language, type, dc_type, fragment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
         [
@@ -345,6 +362,7 @@ export class AppService {
           interest_groups: interestGroups.length > 0 ? interestGroups : null,
           gorc_elements: gorcElements.length > 0 ? gorcElements : null,
           gorc_attributes: gorcAttributes.length > 0 ? gorcAttributes : null,
+          uritype: uriType,
           fragment: resource.fragment,
         },
       });
