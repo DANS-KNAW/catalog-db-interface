@@ -107,6 +107,8 @@ export class AppService {
               throw new BadRequestException();
             }
 
+            this.nullRemover(interestGroupRow.rows[0]);
+
             const interestGroup = new Interestgroup();
             Object.assign(interestGroup, interestGroupRow.rows[0]);
 
@@ -150,6 +152,8 @@ export class AppService {
             if (workingGroupRow.rowCount === 0) {
               throw new BadRequestException();
             }
+
+            this.nullRemover(workingGroupRow.rows[0]);
 
             const workingGroup = new Workinggroup();
             Object.assign(workingGroup, workingGroupRow.rows[0]);
@@ -225,7 +229,13 @@ export class AppService {
     }
   }
 
-  getHello(): string {
-    return 'Hello World!';
+  private nullRemover(row: any) {
+    for (const key in row) {
+      if (row[key] === 'NULL') {
+        row[key] = null;
+      } else if (typeof row[key] === 'object') {
+        this.nullRemover(row[key]);
+      }
+    }
   }
 }
