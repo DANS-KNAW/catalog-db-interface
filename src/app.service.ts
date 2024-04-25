@@ -1,11 +1,18 @@
 import { BadRequestException, HttpException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool, PoolClient } from 'pg';
-import { Annotation, GroupResource, Interestgroup, Resource } from './entities';
+import {
+  Annotation,
+  GroupResource,
+  Interestgroup,
+  Resource,
+  Workinggroup,
+} from './entities';
 import { customAlphabet } from 'nanoid';
 import { formatISO } from 'date-fns';
 import * as es7 from 'es7';
 import { InterestGroupDto } from './dto/InterestGroupsDto';
+import { WorkingGroupDto } from './dto/WorkingGroupDto';
 
 @Injectable()
 export class AppService {
@@ -74,8 +81,8 @@ export class AppService {
             const groupResource = new GroupResource();
             groupResource.uuid_group = interestGroupAnnotaton.id;
             groupResource.title_group = interestGroupAnnotaton.label;
-            groupResource.relation_uuid = 'rda_graph:17BF5718';
-            groupResource.relation = 'isRelated';
+            groupResource.relation_uuid = 'rda_graph:T0ZC84O2';
+            groupResource.relation = 'wgLink';
             groupResource.uuid_resource = resource.uuid_rda;
             groupResource.title_resource = resource.title;
 
@@ -96,14 +103,62 @@ export class AppService {
               [interestGroupAnnotaton.id],
             );
 
+            if (interestGroupRow.rowCount === 0) {
+              throw new BadRequestException();
+            }
+
             const interestGroup = new Interestgroup();
             Object.assign(interestGroup, interestGroupRow.rows[0]);
 
             const interestGroupDto = new InterestGroupDto();
             Object.assign(interestGroupDto, interestGroup);
-            interestGroupDto.relation = 'isRelated';
+            interestGroupDto.relation = 'wgLink';
 
             return interestGroupDto;
+          },
+        ),
+      );
+
+      const working_groups = await Promise.all(
+        annotation.vocabularies.working_groups.map(
+          async (workingGroupAnnotation): Promise<WorkingGroupDto> => {
+            const groupResource = new GroupResource();
+            groupResource.uuid_group = workingGroupAnnotation.id;
+            groupResource.title_group = workingGroupAnnotation.label;
+            groupResource.relation_uuid = 'rda_graph:T0ZC84O2';
+            groupResource.relation = 'wgLink';
+            groupResource.uuid_resource = resource.uuid_rda;
+            groupResource.title_resource = resource.title;
+
+            await this.client.query(
+              'INSERT INTO group_resource (uuid_group, title_group, relation_uuid, relation, uuid_resource, title_resource) VALUES ($1, $2, $3, $4, $5, $6)',
+              [
+                groupResource.uuid_group,
+                groupResource.title_group,
+                groupResource.relation_uuid,
+                groupResource.relation,
+                groupResource.uuid_resource,
+                groupResource.title_resource,
+              ],
+            );
+
+            const workingGroupRow = await this.client.query(
+              'SELECT * FROM workinggroup WHERE uuid_workinggroup = $1 LIMIT 1',
+              [workingGroupAnnotation.id],
+            );
+
+            if (workingGroupRow.rowCount === 0) {
+              throw new BadRequestException();
+            }
+
+            const workingGroup = new Workinggroup();
+            Object.assign(workingGroup, workingGroupRow.rows[0]);
+
+            const workingGroupDto = new WorkingGroupDto();
+            Object.assign(workingGroupDto, workingGroup);
+            workingGroupDto.relation = 'wgLink';
+
+            return workingGroupDto;
           },
         ),
       );
@@ -141,9 +196,9 @@ export class AppService {
       await es.index({
         index: 'dans-rda2',
         body: {
-          uuid: resource.uuid,
-          uuid_rda: resource.uuid_rda,
           uuid_uritype: resource.uuid_uritype,
+          uuid_rda: resource.uuid_rda,
+          uuid: resource.uuid,
           title: resource.title,
           notes: resource.notes,
           uri: resource.uri,
@@ -152,8 +207,9 @@ export class AppService {
           dc_language: resource.dc_language,
           type: resource.type,
           dc_type: resource.dc_type,
+          working_groups: working_groups.length > 0 ? working_groups : null,
+          interest_groups: interestGroups.length > 0 ? interestGroups : null,
           fragment: resource.fragment,
-          interest_groups: interestGroups,
         },
       });
 

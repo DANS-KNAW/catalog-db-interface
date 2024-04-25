@@ -10,6 +10,7 @@ export class AppController {
   @UseGuards(ApiKeyGuard)
   @Post()
   getAnnotation(@Body() createAnnotation: Annotation) {
+    console.log(JSON.stringify(createAnnotation, null, 2));
     return this.appService.insertAnnotation(createAnnotation);
   }
 }
