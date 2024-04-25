@@ -5,7 +5,9 @@ import {
   Annotation,
   GroupResource,
   Interestgroup,
+  Pathway,
   Resource,
+  ResourcePathway,
   Workinggroup,
 } from './entities';
 import { customAlphabet } from 'nanoid';
@@ -13,6 +15,7 @@ import { formatISO } from 'date-fns';
 import * as es7 from 'es7';
 import { InterestGroupDto } from './dto/InterestGroupsDto';
 import { WorkingGroupDto } from './dto/WorkingGroupDto';
+import { PathwaysDto } from './dto/PathwaysDto';
 
 @Injectable()
 export class AppService {
@@ -167,6 +170,52 @@ export class AppService {
         ),
       );
 
+      const pathways = await Promise.all(
+        annotation.vocabularies.pathways.map(
+          async (pathwayAnnotation): Promise<PathwaysDto> => {
+            const resourcePathway = new ResourcePathway();
+            resourcePathway.uuid_resource = resource.uuid_rda;
+            resourcePathway.resource = resource.title;
+            resourcePathway.relation_uuid = 'rda_graph:E8904E44';
+            resourcePathway.relation = 'supports';
+            resourcePathway.uuid_pathway = pathwayAnnotation.id;
+            resourcePathway.pathway = pathwayAnnotation.label;
+
+            await this.client.query(
+              'INSERT INTO resource_pathway (uuid_resource, resource, relation_uuid, relation, uuid_pathway, pathway) VALUES ($1, $2, $3, $4, $5, $6)',
+              [
+                resourcePathway.uuid_resource,
+                resourcePathway.resource,
+                resourcePathway.relation_uuid,
+                resourcePathway.relation,
+                resourcePathway.uuid_pathway,
+                resourcePathway.pathway,
+              ],
+            );
+
+            const resourcePathwayRow = await this.client.query(
+              'SELECT * FROM pathway WHERE uuid_pathway = $1 LIMIT 1',
+              [pathwayAnnotation.id],
+            );
+
+            if (resourcePathwayRow.rowCount === 0) {
+              throw new BadRequestException();
+            }
+
+            this.nullRemover(resourcePathwayRow.rows[0]);
+
+            const pathway = new Pathway();
+            Object.assign(pathway, resourcePathwayRow.rows[0]);
+
+            const pathwayDto = new PathwaysDto();
+            Object.assign(pathwayDto, pathway);
+            pathwayDto.relation = 'supports';
+
+            return pathwayDto;
+          },
+        ),
+      );
+
       this.client.query(
         'INSERT INTO resource (uuid, uuid_rda, uuid_uritype, title, notes, uri, dc_date, dc_description, dc_language, type, dc_type, fragment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
         [
@@ -211,6 +260,7 @@ export class AppService {
           dc_language: resource.dc_language,
           type: resource.type,
           dc_type: resource.dc_type,
+          pathways: pathways.length > 0 ? pathways : null,
           working_groups: working_groups.length > 0 ? working_groups : null,
           interest_groups: interestGroups.length > 0 ? interestGroups : null,
           fragment: resource.fragment,
