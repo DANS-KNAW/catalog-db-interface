@@ -3,10 +3,14 @@ import { ConfigService } from '@nestjs/config';
 import { Pool, PoolClient } from 'pg';
 import {
   Annotation,
+  GorcAttribute,
+  GorcElement,
   GroupResource,
   Interestgroup,
   Pathway,
   Resource,
+  ResourceGorcAttribute,
+  ResourceGorcElement,
   ResourcePathway,
   Workinggroup,
 } from './entities';
@@ -216,6 +220,82 @@ export class AppService {
         ),
       );
 
+      const gorcElements = await Promise.all(
+        annotation.vocabularies.gorc_elements.map(
+          async (gorcElementAnnotation): Promise<GorcElement> => {
+            const gorcElement = new ResourceGorcElement();
+            gorcElement.uuid_resource = resource.uuid_rda;
+            gorcElement.resource = resource.title;
+            gorcElement.uuid_element = gorcElementAnnotation.id;
+            gorcElement.element = gorcElementAnnotation.label;
+
+            await this.client.query(
+              'INSERT INTO resource_gorc_element (uuid_resource, resource, uuid_element, element) VALUES ($1, $2, $3, $4)',
+              [
+                gorcElement.uuid_resource,
+                gorcElement.resource,
+                gorcElement.uuid_element,
+                gorcElement.element,
+              ],
+            );
+
+            const gorcElementRow = await this.client.query(
+              'SELECT * FROM gorc_element WHERE uuid_element = $1 LIMIT 1',
+              [gorcElementAnnotation.id],
+            );
+
+            if (gorcElementRow.rowCount === 0) {
+              throw new BadRequestException();
+            }
+
+            this.nullRemover(gorcElementRow.rows[0]);
+
+            const element = new GorcElement();
+            Object.assign(element, gorcElementRow.rows[0]);
+
+            return element;
+          },
+        ),
+      );
+
+      const gorcAttributes = await Promise.all(
+        annotation.vocabularies.gorc_attributes.map(
+          async (gorcAttributeAnnotation): Promise<GorcAttribute> => {
+            const gorcElement = new ResourceGorcAttribute();
+            gorcElement.uuid_resource = resource.uuid_rda;
+            gorcElement.resource = resource.title;
+            gorcElement.uuid_attribute = gorcAttributeAnnotation.id;
+            gorcElement.attribute = gorcAttributeAnnotation.label;
+
+            await this.client.query(
+              'INSERT INTO resource_gorc_attribute (uuid_resource, resource, uuid_attribute, attribute) VALUES ($1, $2, $3, $4)',
+              [
+                gorcElement.uuid_resource,
+                gorcElement.resource,
+                gorcElement.uuid_attribute,
+                gorcElement.attribute,
+              ],
+            );
+
+            const gorcAttributeRow = await this.client.query(
+              'SELECT * FROM gorc_attributes WHERE uuid_attribute = $1 LIMIT 1',
+              [gorcAttributeAnnotation.id],
+            );
+
+            if (gorcAttributeRow.rowCount === 0) {
+              throw new BadRequestException();
+            }
+
+            this.nullRemover(gorcAttributeRow.rows[0]);
+
+            const attribute = new GorcAttribute();
+            Object.assign(attribute, gorcAttributeRow.rows[0]);
+
+            return attribute;
+          },
+        ),
+      );
+
       this.client.query(
         'INSERT INTO resource (uuid, uuid_rda, uuid_uritype, title, notes, uri, dc_date, dc_description, dc_language, type, dc_type, fragment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
         [
@@ -263,6 +343,8 @@ export class AppService {
           pathways: pathways.length > 0 ? pathways : null,
           working_groups: working_groups.length > 0 ? working_groups : null,
           interest_groups: interestGroups.length > 0 ? interestGroups : null,
+          gorc_elements: gorcElements.length > 0 ? gorcElements : null,
+          gorc_attributes: gorcAttributes.length > 0 ? gorcAttributes : null,
           fragment: resource.fragment,
         },
       });
