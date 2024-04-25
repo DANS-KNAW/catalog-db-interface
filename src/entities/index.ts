@@ -1,4 +1,6 @@
 import { Annotation } from './annotation';
+import { GorcAttribute } from './gorc_attributes';
+import { GorcElement } from './gorc_element';
 import { GroupResource } from './group_resource';
 import { Individual } from './individual';
 import { IndividualGroup } from './individual_group';
@@ -16,6 +18,8 @@ import { Orgtype } from './orgtype';
 import { Pathway } from './pathway';
 import { Relation } from './relation';
 import { Resource } from './resource';
+import { ResourceGorcAttribute } from './resource_gorc_attribute';
+import { ResourceGorcElement } from './resource_gorc_element';
 import { ResourcePathway } from './resource_pathway';
 import { ResourceRelation } from './resource_relation';
 import { ResourceRights } from './resource_rights';
@@ -53,6 +57,10 @@ export { UriType };
 export { Workflow };
 export { Workinggroup };
 export { Annotation };
+export { GorcAttribute };
+export { GorcElement };
+export { ResourceGorcAttribute };
+export { ResourceGorcElement };
 
 export default [
   GroupResource,
@@ -82,4 +90,8 @@ export default [
   Workflow,
   Workinggroup,
   Annotation,
+  GorcAttribute,
+  GorcElement,
+  ResourceGorcAttribute,
+  ResourceGorcElement,
 ];
