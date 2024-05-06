@@ -79,9 +79,10 @@ export class AppService {
       resource.dc_description = annotation.citation.description;
       resource.dc_language = annotation.citation.language.value;
       resource.type = 'publication-other';
-      resource.dc_type = 'info:eu-repo/semantics/other';
+      resource.dc_type = 'Other';
       resource.fragment = annotation.annotation;
       resource.uuid_uritype = annotation.uritype;
+      resource.source = 'Annotation';
 
       const interestGroups = await Promise.all(
         annotation.vocabularies.interest_groups.map(
@@ -297,41 +298,43 @@ export class AppService {
         ),
       );
 
-      const domains = await Promise.all(annotation.vocabularies.domains.map(
-        async (domainAnnotation): Promise<ResourceDisciplines> => {
-          const domain = new ResourceDisciplines();
-          domain.uuid_resource = resource.uuid_rda;
-          domain.resource = resource.title;
-          domain.uuid_disciplines = domainAnnotation.id;
-          domain.disciplines = domainAnnotation.label;
+      const domains = await Promise.all(
+        annotation.vocabularies.domains.map(
+          async (domainAnnotation): Promise<ResourceDisciplines> => {
+            const domain = new ResourceDisciplines();
+            domain.uuid_resource = resource.uuid_rda;
+            domain.resource = resource.title;
+            domain.uuid_disciplines = domainAnnotation.id;
+            domain.disciplines = domainAnnotation.label;
 
-          await this.client.query(
-            'INSERT INTO resource_disciplines (uuid_resource, resource, uuid_disciplines, disciplines) VALUES ($1, $2, $3, $4)',
-            [
-              domain.uuid_resource,
-              domain.resource,
-              domain.uuid_disciplines,
-              domain.disciplines,
-            ],
-          );
+            await this.client.query(
+              'INSERT INTO resource_disciplines (uuid_resource, resource, uuid_disciplines, disciplines) VALUES ($1, $2, $3, $4)',
+              [
+                domain.uuid_resource,
+                domain.resource,
+                domain.uuid_disciplines,
+                domain.disciplines,
+              ],
+            );
 
-          const domainRow = await this.client.query(
-            'SELECT * FROM disciplines WHERE uuid = $1 LIMIT 1',
-            [domainAnnotation.id],
-          );
+            const domainRow = await this.client.query(
+              'SELECT * FROM disciplines WHERE uuid = $1 LIMIT 1',
+              [domainAnnotation.id],
+            );
 
-          if (domainRow.rowCount === 0) {
-            throw new BadRequestException();
-          }
+            if (domainRow.rowCount === 0) {
+              throw new BadRequestException();
+            }
 
-          this.nullRemover(domainRow.rows[0]);
+            this.nullRemover(domainRow.rows[0]);
 
-          const domainDto = new ResourceDisciplines();
-          Object.assign(domainDto, domainRow.rows[0]);
+            const domainDto = new ResourceDisciplines();
+            Object.assign(domainDto, domainRow.rows[0]);
 
-          return domainDto;
-        }
-      ));
+            return domainDto;
+          },
+        ),
+      );
 
       const uriTypeRow = await this.client.query(
         'SELECT * FROM uri_type WHERE uuid_uritype = $1 LIMIT 1',
@@ -350,7 +353,7 @@ export class AppService {
       };
 
       this.client.query(
-        'INSERT INTO resource (uuid, uuid_rda, uuid_uritype, title, notes, uri, dc_date, dc_description, dc_language, type, dc_type, fragment) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
+        'INSERT INTO resource (uuid, uuid_rda, uuid_uritype, title, notes, uri, dc_date, dc_description, dc_language, type, dc_type, fragment, source) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)',
         [
           resource.uuid,
           resource.uuid_rda,
@@ -364,6 +367,7 @@ export class AppService {
           resource.type,
           resource.dc_type,
           resource.fragment,
+          resource.source,
         ],
       );
 
@@ -401,6 +405,7 @@ export class AppService {
           disciplines: domains.length > 0 ? domains : null,
           uritype: uriType,
           fragment: resource.fragment,
+          source: resource.source,
         },
       });
 
