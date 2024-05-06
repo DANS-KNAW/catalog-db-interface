@@ -18,6 +18,7 @@ import { Orgtype } from './orgtype';
 import { Pathway } from './pathway';
 import { Relation } from './relation';
 import { Resource } from './resource';
+import { ResourceDisciplines } from './resource_disciplines';
 import { ResourceGorcAttribute } from './resource_gorc_attribute';
 import { ResourceGorcElement } from './resource_gorc_element';
 import { ResourcePathway } from './resource_pathway';
@@ -61,6 +62,7 @@ export { GorcAttribute };
 export { GorcElement };
 export { ResourceGorcAttribute };
 export { ResourceGorcElement };
+export { ResourceDisciplines };
 
 export default [
   GroupResource,
@@ -94,4 +96,5 @@ export default [
   GorcElement,
   ResourceGorcAttribute,
   ResourceGorcElement,
+  ResourceDisciplines,
 ];

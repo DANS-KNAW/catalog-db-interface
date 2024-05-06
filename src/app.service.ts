@@ -9,10 +9,10 @@ import {
   Interestgroup,
   Pathway,
   Resource,
+  ResourceDisciplines,
   ResourceGorcAttribute,
   ResourceGorcElement,
   ResourcePathway,
-  UriType,
   Workinggroup,
 } from './entities';
 import { customAlphabet } from 'nanoid';
@@ -297,6 +297,42 @@ export class AppService {
         ),
       );
 
+      const domains = await Promise.all(annotation.vocabularies.domains.map(
+        async (domainAnnotation): Promise<ResourceDisciplines> => {
+          const domain = new ResourceDisciplines();
+          domain.uuid_resource = resource.uuid_rda;
+          domain.resource = resource.title;
+          domain.uuid_disciplines = domainAnnotation.id;
+          domain.disciplines = domainAnnotation.label;
+
+          await this.client.query(
+            'INSERT INTO resource_disciplines (uuid_resource, resource, uuid_disciplines, disciplines) VALUES ($1, $2, $3, $4)',
+            [
+              domain.uuid_resource,
+              domain.resource,
+              domain.uuid_disciplines,
+              domain.disciplines,
+            ],
+          );
+
+          const domainRow = await this.client.query(
+            'SELECT * FROM disciplines WHERE uuid = $1 LIMIT 1',
+            [domainAnnotation.id],
+          );
+
+          if (domainRow.rowCount === 0) {
+            throw new BadRequestException();
+          }
+
+          this.nullRemover(domainRow.rows[0]);
+
+          const domainDto = new ResourceDisciplines();
+          Object.assign(domainDto, domainRow.rows[0]);
+
+          return domainDto;
+        }
+      ));
+
       const uriTypeRow = await this.client.query(
         'SELECT * FROM uri_type WHERE uuid_uritype = $1 LIMIT 1',
         [annotation.uritype],
@@ -362,6 +398,7 @@ export class AppService {
           interest_groups: interestGroups.length > 0 ? interestGroups : null,
           gorc_elements: gorcElements.length > 0 ? gorcElements : null,
           gorc_attributes: gorcAttributes.length > 0 ? gorcAttributes : null,
+          disciplines: domains.length > 0 ? domains : null,
           uritype: uriType,
           fragment: resource.fragment,
         },

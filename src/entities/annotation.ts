@@ -24,11 +24,11 @@ export class Annotation {
     resource?: string;
   };
   vocabularies: {
-    pathways: vocab[];
-    gorc_attributes: vocab[];
-    gorc_elements: vocab[];
-    working_groups: vocab[];
-    interest_groups: vocab[];
-    domains: vocab[];
+    pathways?: vocab[];
+    gorc_attributes?: vocab[];
+    gorc_elements?: vocab[];
+    working_groups?: vocab[];
+    interest_groups?: vocab[];
+    domains?: vocab[];
   };
 }
